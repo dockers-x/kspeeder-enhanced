@@ -10,67 +10,13 @@ RUN apk add --no-cache caddy
 
 # Create Caddy configuration file
 RUN cat > /etc/caddy/Caddyfile << 'EOF'
-# Main proxy on ports 80/443
-:80, :443 {
+# Main proxy on ports 8081/5444
+:8081, :5444 {
     # Health check endpoint
     respond /health "KSpeeder with Caddy Proxy - Healthy" 200 {
         close
     }
-    
-    # Management interface proxy
-    handle /console* {
-        reverse_proxy http://127.0.0.1:5003 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
-# Static assets that might be served from root (common in SPAs)
-    handle /assets/* {
-        reverse_proxy http://127.0.0.1:5003 {
-            header_up Host localhost:5003
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
-    
-    # CSS and JS files with hash names (Vite/Webpack pattern)
-    handle /index-*.css {
-        reverse_proxy http://127.0.0.1:5003 {
-            header_up Host localhost:5003
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
-    
-    handle /index-*.js {
-        reverse_proxy http://127.0.0.1:5003 {
-            header_up Host localhost:5003
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
-    
-    # Common static files
-    handle /favicon.ico {
-        reverse_proxy http://127.0.0.1:5003 {
-            header_up Host localhost:5003
-        }
-    }
-    
-    handle /static/* {
-        reverse_proxy http://127.0.0.1:5003 {
-            header_up Host localhost:5003
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
-    
+
     # Docker Registry API proxy - all other requests
     reverse_proxy https://127.0.0.1:5443 {
         header_up Host registry.linkease.net
@@ -78,12 +24,12 @@ RUN cat > /etc/caddy/Caddyfile << 'EOF'
         header_up X-Forwarded-For {remote_host}
         header_up X-Forwarded-Proto {scheme}
         header_up X-Original-Host {host}
-        
+
         transport http {
             tls_insecure_skip_verify
         }
     }
-    
+
     # Use internal TLS for HTTPS
     tls internal
 }
@@ -97,8 +43,7 @@ echo "=========================================="
 echo "Starting KSpeeder + Caddy Proxy"
 echo "=========================================="
 echo "Ports:"
-echo "  80/443  - HTTP/HTTPS Proxy (Any domain/IP)"
-echo "  5443    - Original KSpeeder HTTPS"
+echo "  8081/5444  - HTTP/HTTPS Proxy (Any domain/IP)"
 echo "  5003    - Management Interface"
 echo "=========================================="
 
@@ -119,9 +64,9 @@ RUN chmod +x /start.sh
 
 # Expose ports
 # New proxy ports
-EXPOSE 80
-EXPOSE 443
-# Keep original ports unchanged  
+EXPOSE 8081
+EXPOSE 5444
+# Keep original ports unchanged
 EXPOSE 5443
 EXPOSE 5003
 

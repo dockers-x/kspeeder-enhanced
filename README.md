@@ -2,7 +2,7 @@ Enhanced KSpeeder
 
 ## 核心功能
 1. **基于官方镜像**: 完全兼容 `linkease/kspeeder:latest`
-2. **添加Caddy代理**: 通过80/443端口提供无需修改hosts的访问
+2. **添加Caddy代理**: 通过8081/5444端口提供无需修改hosts的访问
 3. **保持官方端口**: 5443和5003端口功能不变
 4. **自动域名重写**: Caddy自动将任何Host头改为`registry.linkease.net`
 
@@ -22,8 +22,8 @@ services:
     build: .
     container_name: kspeeder
     ports:
-      - "80:80"
-      - "443:443"
+      - "8081:8081"
+      - "5444:5444"
       - "5443:5443"
       - "5003:5003"
     volumes:
