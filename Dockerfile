@@ -10,32 +10,26 @@ RUN apk add --no-cache caddy
 
 # Create Caddy configuration file
 RUN cat > /etc/caddy/Caddyfile << 'EOF'
-# HTTP and HTTPS proxy ports - Supports any domain/IP access
 :80, :443 {
     # Health check endpoint
-    handle /health {
-        header Content-Type "text/plain"
-        respond "KSpeeder with Caddy Proxy - Healthy" 200
+    respond /health "KSpeeder with Caddy Proxy - Healthy" 200 {
+        close
     }
     
-    # Docker Registry API proxy
-    handle {
-        # Critical: Rewrite Host header to the domain expected by KSpeeder
+    # Docker Registry API proxy - all other requests
+    reverse_proxy https://127.0.0.1:5443 {
         header_up Host registry.linkease.net
         header_up X-Real-IP {remote_host}
         header_up X-Forwarded-For {remote_host}
         header_up X-Forwarded-Proto {scheme}
         header_up X-Original-Host {host}
         
-        # Reverse proxy to local KSpeeder on port 5443
-        reverse_proxy https://127.0.0.1:5443 {
-            transport http {
-                tls_insecure_skip_verify
-            }
+        transport http {
+            tls_insecure_skip_verify
         }
     }
     
-    # Auto HTTPS (using internal CA certificate)
+    # Use internal TLS for HTTPS
     tls internal
 }
 EOF
