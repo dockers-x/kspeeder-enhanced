@@ -26,6 +26,50 @@ RUN cat > /etc/caddy/Caddyfile << 'EOF'
             header_up X-Forwarded-Proto {scheme}
         }
     }
+# Static assets that might be served from root (common in SPAs)
+    handle /assets/* {
+        reverse_proxy http://127.0.0.1:5003 {
+            header_up Host localhost:5003
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+    
+    # CSS and JS files with hash names (Vite/Webpack pattern)
+    handle /index-*.css {
+        reverse_proxy http://127.0.0.1:5003 {
+            header_up Host localhost:5003
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+    
+    handle /index-*.js {
+        reverse_proxy http://127.0.0.1:5003 {
+            header_up Host localhost:5003
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+    
+    # Common static files
+    handle /favicon.ico {
+        reverse_proxy http://127.0.0.1:5003 {
+            header_up Host localhost:5003
+        }
+    }
+    
+    handle /static/* {
+        reverse_proxy http://127.0.0.1:5003 {
+            header_up Host localhost:5003
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
     
     # Docker Registry API proxy - all other requests
     reverse_proxy https://127.0.0.1:5443 {
