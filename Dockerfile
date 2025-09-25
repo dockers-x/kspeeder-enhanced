@@ -79,7 +79,6 @@ EOF
 # Create new entrypoint script
 RUN cat > /start.sh << 'EOF'
 #!/bin/sh
-
 echo "=========================================="
 echo "Starting KSpeeder + Caddy Proxy"
 echo "=========================================="
@@ -101,11 +100,11 @@ RUN chmod +x /start.sh
 
 # Expose ports
 # New proxy ports
-EXPOSE 80      # HTTP proxy port
-EXPOSE 443     # HTTPS proxy port
+EXPOSE 80
+EXPOSE 443
 # Keep original ports unchanged
-EXPOSE 5443    # KSpeeder official HTTPS port
-EXPOSE 5003    # KSpeeder official management port
+EXPOSE 5443
+EXPOSE 5003
 
 # Entrypoint
 CMD ["/start.sh"]
