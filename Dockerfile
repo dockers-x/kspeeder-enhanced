@@ -44,15 +44,6 @@ RUN cat > /etc/caddy/Caddyfile << 'EOF'
     tls internal
 }
 
-# Direct proxy for management interface on separate port
-:5003 {
-    reverse_proxy http://127.0.0.1:5003 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
-    }
-}
 EOF
 
 # Create startup script
@@ -88,6 +79,7 @@ EXPOSE 80
 EXPOSE 443
 # Keep original ports unchanged  
 EXPOSE 5443
+EXPOSE 5003
 
 # Entrypoint
 CMD ["/start.sh"]
