@@ -5,10 +5,8 @@ FROM linkease/kspeeder:latest
 LABEL maintainer="czytcn@gmail.com"
 LABEL description="KSpeeder with Caddy reverse proxy for any domain/IP access"
 
-# Install Caddy and supervisor
-RUN apk add --no-cache caddy supervisor && \
-    which caddy && \
-    caddy version
+# Install Caddy
+RUN apk add --no-cache caddy
 
 # Create Caddy configuration file
 RUN cat > /etc/caddy/Caddyfile << 'EOF'
@@ -43,42 +41,7 @@ RUN cat > /etc/caddy/Caddyfile << 'EOF'
 }
 EOF
 
-# Create supervisor configuration to manage KSpeeder and Caddy services
-RUN mkdir -p /etc/supervisor/conf.d && \
-cat > /etc/supervisor/conf.d/supervisord.conf << 'EOF'
-[supervisord]
-nodaemon=true
-user=root
-logfile=/var/log/supervisor/supervisord.log
-pidfile=/var/run/supervisord.pid
-loglevel=info
-
-[program:kspeeder]
-command=/entrypoint.sh
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/supervisor/kspeeder_stderr.log
-stdout_logfile=/var/log/supervisor/kspeeder_stdout.log
-user=root
-priority=1
-startsecs=10
-startretries=3
-
-[program:caddy]
-command=caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/supervisor/caddy_stderr.log
-stdout_logfile=/var/log/supervisor/caddy_stdout.log
-user=root
-priority=2
-# Wait for KSpeeder to start before launching Caddy
-startsecs=20
-startretries=3
-depends_on=kspeeder
-EOF
-
-# Create new entrypoint script
+# Create startup script
 RUN cat > /start.sh << 'EOF'
 #!/bin/sh
 echo "=========================================="
@@ -90,12 +53,17 @@ echo "  5443    - Original KSpeeder HTTPS"
 echo "  5003    - Management Interface"
 echo "=========================================="
 
-# Create log directory
-mkdir -p /var/log/supervisor
+# Start KSpeeder in background
+echo "Starting KSpeeder..."
+/entrypoint.sh &
+KSPEEDER_PID=$!
 
-# Start supervisor to manage all services
-echo "Starting supervisor..."
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+# Wait a bit for KSpeeder to initialize
+sleep 10
+
+# Start Caddy in foreground (this keeps the container running)
+echo "Starting Caddy proxy..."
+exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
 EOF
 
 RUN chmod +x /start.sh
