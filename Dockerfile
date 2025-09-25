@@ -14,9 +14,8 @@ RUN cat > /etc/caddy/Caddyfile << 'EOF'
 :80, :443 {
     # Health check endpoint
     handle /health {
-        respond "KSpeeder with Caddy Proxy - Healthy" 200 {
-            header Content-Type "text/plain"
-        }
+        header Content-Type "text/plain"
+        respond "KSpeeder with Caddy Proxy - Healthy" 200
     }
     
     # Docker Registry API proxy
