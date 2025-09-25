@@ -6,7 +6,9 @@ LABEL maintainer="czytcn@gmail.com"
 LABEL description="KSpeeder with Caddy reverse proxy for any domain/IP access"
 
 # Install Caddy and supervisor
-RUN apk add --no-cache caddy supervisor
+RUN apk add --no-cache caddy supervisor && \
+    which caddy && \
+    caddy version
 
 # Create Caddy configuration file
 RUN cat > /etc/caddy/Caddyfile << 'EOF'
@@ -18,7 +20,7 @@ RUN cat > /etc/caddy/Caddyfile << 'EOF'
             header Content-Type "text/plain"
         }
     }
-
+    
     # Docker Registry API proxy
     handle {
         # Critical: Rewrite Host header to the domain expected by KSpeeder
@@ -27,7 +29,7 @@ RUN cat > /etc/caddy/Caddyfile << 'EOF'
         header_up X-Forwarded-For {remote_host}
         header_up X-Forwarded-Proto {scheme}
         header_up X-Original-Host {host}
-
+        
         # Reverse proxy to local KSpeeder on port 5443
         reverse_proxy https://127.0.0.1:5443 {
             transport http {
@@ -35,7 +37,7 @@ RUN cat > /etc/caddy/Caddyfile << 'EOF'
             }
         }
     }
-
+    
     # Auto HTTPS (using internal CA certificate)
     tls internal
 }
@@ -63,7 +65,7 @@ startsecs=10
 startretries=3
 
 [program:caddy]
-command=/usr/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+command=caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
 autostart=true
 autorestart=true
 stderr_logfile=/var/log/supervisor/caddy_stderr.log
@@ -102,7 +104,7 @@ RUN chmod +x /start.sh
 # New proxy ports
 EXPOSE 80
 EXPOSE 443
-# Keep original ports unchanged
+# Keep original ports unchanged  
 EXPOSE 5443
 EXPOSE 5003
 
