@@ -10,10 +10,21 @@ RUN apk add --no-cache caddy
 
 # Create Caddy configuration file
 RUN cat > /etc/caddy/Caddyfile << 'EOF'
+# Main proxy on ports 80/443
 :80, :443 {
     # Health check endpoint
     respond /health "KSpeeder with Caddy Proxy - Healthy" 200 {
         close
+    }
+    
+    # Management interface proxy
+    handle /console* {
+        reverse_proxy http://127.0.0.1:5003 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
     }
     
     # Docker Registry API proxy - all other requests
@@ -31,6 +42,16 @@ RUN cat > /etc/caddy/Caddyfile << 'EOF'
     
     # Use internal TLS for HTTPS
     tls internal
+}
+
+# Direct proxy for management interface on separate port
+:5003 {
+    reverse_proxy http://127.0.0.1:5003 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
 }
 EOF
 
@@ -67,7 +88,6 @@ EXPOSE 80
 EXPOSE 443
 # Keep original ports unchanged  
 EXPOSE 5443
-EXPOSE 5003
 
 # Entrypoint
 CMD ["/start.sh"]
